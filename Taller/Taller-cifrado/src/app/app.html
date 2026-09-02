@@ -1,0 +1,249 @@
+﻿<main class="app-shell">
+  <header class="page-header panel hero-panel">
+    <div class="header-copy">
+      <p class="eyebrow">Laboratorio criptográfico</p>
+      <h1>Taller de cifrado clásico</h1>
+    </div>
+    <p class="subtitle">Prueba cada algoritmo por separado con entradas limpias, análisis concreto y una experiencia visual clara.</p>
+
+    <div class="hero-features">
+      <span>Alfabeto español: A–Z + Ñ</span>
+      <span>Sin espacios, tildes ni signos</span>
+      <span>IC + diagnóstico por bloque</span>
+    </div>
+  </header>
+
+  <section id="caesar-section" class="panel cipher-card">
+    <div class="section-header">
+      <div>
+        <p class="card-label">Cifrado monoalfabético</p>
+        <h2>César</h2>
+      </div>
+      <span class="badge">Desplazamiento</span>
+    </div>
+
+    <div class="field-row compact">
+      <label for="caesar-key">Desplazamiento</label>
+      <input id="caesar-key" type="number" min="0" max="26" [value]="caesar().key" (input)="onCaesarKeyInput($event)" />
+    </div>
+
+    <div class="preset-row">
+      @for (preset of caesarPresets; track preset.label) {
+        <button type="button" class="preset" (click)="applyCaesarPreset(preset.value)">{{ preset.label }}</button>
+      }
+    </div>
+
+    <div class="dual-grid">
+      <div>
+        <label for="caesar-plaintext">Texto plano</label>
+        <textarea id="caesar-plaintext" rows="7" [value]="caesar().plaintext" (input)="onCaesarPlaintextInput($event)"></textarea>
+      </div>
+      <div>
+        <label for="caesar-ciphertext">Texto cifrado</label>
+        <textarea id="caesar-ciphertext" rows="7" [value]="caesar().ciphertext" (input)="onCaesarCiphertextInput($event)"></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" (click)="encryptCaesarSection()">Cifrar</button>
+      <button type="button" class="secondary" (click)="decryptCaesarSection()">Descifrar</button>
+      <button type="button" class="ghost" (click)="analyzeCaesarSection()">Analizar</button>
+      <button type="button" class="ghost" (click)="clearCaesar()">Limpiar</button>
+    </div>
+
+    @if (caesarAnalysisVisible()) {
+      @if (caesarAnalysis(); as result) {
+        <section class="result-panel">
+          <h3>Resultado del análisis</h3>
+          <div class="metric-row">
+            <span>IC:</span>
+            <strong>{{ result.ic.toFixed(4) }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Diagnóstico:</span>
+            <strong>{{ result.diagnosis }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Clave:</span>
+            <strong>{{ result.key }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Texto:</span>
+          </div>
+          <div class="plaintext-box">{{ result.plaintext || 'Sin texto disponible' }}</div>
+
+          <div class="chart-box">
+            <h4>Frecuencia por letra</h4>
+            <div class="bar-chart">
+              @for (item of getCaesarChart(); track item.letter) {
+                <div class="bar-group">
+                  <div class="bar-value">{{ item.count }}</div>
+                  <div class="bar" [style.height.px]="getBarHeight(item.count, getCaesarChartMax())"></div>
+                  <span>{{ item.letter }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    }
+  </section>
+
+  <section id="affine-section" class="panel cipher-card">
+    <div class="section-header">
+      <div>
+        <p class="card-label">Cifrado monoalfabético</p>
+        <h2>Afín</h2>
+      </div>
+      <span class="badge">Ecuación</span>
+    </div>
+
+    <div class="field-row compact two-columns">
+      <div>
+        <label for="affine-a">A</label>
+        <input id="affine-a" type="number" min="1" max="26" [value]="affine().a" (input)="onAffineAInput($event)" />
+      </div>
+      <div>
+        <label for="affine-b">B</label>
+        <input id="affine-b" type="number" min="0" max="26" [value]="affine().b" (input)="onAffineBInput($event)" />
+      </div>
+    </div>
+
+    <div class="preset-row">
+      @for (preset of affinePresets; track preset.label) {
+        <button type="button" class="preset" (click)="applyAffinePreset(preset.a, preset.b)">{{ preset.label }}</button>
+      }
+    </div>
+
+    <div class="dual-grid">
+      <div>
+        <label for="affine-plaintext">Texto plano</label>
+        <textarea id="affine-plaintext" rows="7" [value]="affine().plaintext" (input)="onAffinePlaintextInput($event)"></textarea>
+      </div>
+      <div>
+        <label for="affine-ciphertext">Texto cifrado</label>
+        <textarea id="affine-ciphertext" rows="7" [value]="affine().ciphertext" (input)="onAffineCiphertextInput($event)"></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" (click)="encryptAffineSection()">Cifrar</button>
+      <button type="button" class="secondary" (click)="decryptAffineSection()">Descifrar</button>
+      <button type="button" class="ghost" (click)="analyzeAffineSection()">Analizar</button>
+      <button type="button" class="ghost" (click)="clearAffine()">Limpiar</button>
+    </div>
+
+    @if (affineAnalysisVisible()) {
+      @if (affineAnalysis(); as result) {
+        <section class="result-panel">
+          <h3>Resultado del análisis</h3>
+          <div class="metric-row">
+            <span>IC:</span>
+            <strong>{{ result.ic.toFixed(4) }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Diagnóstico:</span>
+            <strong>{{ result.diagnosis }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Clave:</span>
+            <strong>{{ result.key }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Texto:</span>
+          </div>
+          <div class="plaintext-box">{{ result.plaintext || 'Sin texto disponible' }}</div>
+
+          <div class="chart-box">
+            <h4>Frecuencia por letra</h4>
+            <div class="bar-chart">
+              @for (item of getAffineChart(); track item.letter) {
+                <div class="bar-group">
+                  <div class="bar-value">{{ item.count }}</div>
+                  <div class="bar" [style.height.px]="getBarHeight(item.count, getAffineChartMax())"></div>
+                  <span>{{ item.letter }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    }
+  </section>
+
+  <section id="vigenere-section" class="panel cipher-card">
+    <div class="section-header">
+      <div>
+        <p class="card-label">Cifrado polialfabético</p>
+        <h2>Vigenère</h2>
+      </div>
+      <span class="badge">Clave repetida</span>
+    </div>
+
+    <div class="field-row compact">
+      <label for="vigenere-key">Clave</label>
+      <input id="vigenere-key" type="text" [value]="vigenere().key" (input)="onVigenereKeyInput($event)" />
+    </div>
+
+    <div class="preset-row">
+      @for (preset of vigenerePresets; track preset.label) {
+        <button type="button" class="preset" (click)="applyVigenerePreset(preset.value)">{{ preset.label }}</button>
+      }
+    </div>
+
+    <div class="dual-grid">
+      <div>
+        <label for="vigenere-plaintext">Texto plano</label>
+        <textarea id="vigenere-plaintext" rows="7" [value]="vigenere().plaintext" (input)="onVigenerePlaintextInput($event)"></textarea>
+      </div>
+      <div>
+        <label for="vigenere-ciphertext">Texto cifrado</label>
+        <textarea id="vigenere-ciphertext" rows="7" [value]="vigenere().ciphertext" (input)="onVigenereCiphertextInput($event)"></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" (click)="encryptVigenereSection()">Cifrar</button>
+      <button type="button" class="secondary" (click)="decryptVigenereSection()">Descifrar</button>
+      <button type="button" class="ghost" (click)="analyzeVigenereSection()">Analizar</button>
+      <button type="button" class="ghost" (click)="clearVigenere()">Limpiar</button>
+    </div>
+
+    @if (vigenereAnalysisVisible()) {
+      @if (vigenereAnalysis(); as result) {
+        <section class="result-panel">
+          <h3>Resultado del análisis</h3>
+          <div class="metric-row">
+            <span>IC:</span>
+            <strong>{{ result.ic.toFixed(4) }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Diagnóstico:</span>
+            <strong>{{ result.diagnosis }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Clave:</span>
+            <strong>{{ result.key }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Texto:</span>
+          </div>
+          <div class="plaintext-box">{{ result.plaintext || 'Sin texto disponible' }}</div>
+
+          <div class="chart-box">
+            <h4>Frecuencia por letra</h4>
+            <div class="bar-chart bar-chart--vigenere">
+              @for (item of getVigenereChart(); track item.letter) {
+                <div class="bar-group">
+                  <div class="bar-value">{{ item.count }}</div>
+                  <div class="bar" [style.height.px]="getBarHeight(item.count, getVigenereChartMax())"></div>
+                  <span>{{ item.letter }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    }
+  </section>
+</main>
