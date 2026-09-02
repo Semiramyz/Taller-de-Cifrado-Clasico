@@ -343,6 +343,27 @@ button.ghost {
   color: #1f2937;
 }
 
+.final-media-card {
+  margin-top: 1.2rem;
+}
+
+.final-media-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 0.5rem;
+}
+
+.final-video {
+  display: block;
+  width: min(100%, 900px);
+  max-height: 440px;
+  border-radius: 18px;
+  background: #000;
+  border: 1px solid rgba(187, 159, 179, 0.4);
+}
+
 .chart-axis-labels {
   display: flex;
   justify-content: space-between;
