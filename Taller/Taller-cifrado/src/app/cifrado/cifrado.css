@@ -6,7 +6,7 @@
   padding: 0;
   background:
     linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)),
-    url('../../miom-_0326-13glJ5yVm1M-unsplash.jpg') center center / cover no-repeat fixed;
+    url('../../../miom-_0326-13glJ5yVm1M-unsplash.jpg') center center / cover no-repeat fixed;
   color: #2f2a39;
   font-family: Arial, Helvetica, sans-serif;
   position: relative;
@@ -457,4 +457,12 @@ button.ghost {
   button {
     width: 100%;
   }
+}
+
+.session-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  color: #594d5d;
 }

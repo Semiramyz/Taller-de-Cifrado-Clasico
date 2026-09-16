@@ -1,0 +1,77 @@
+<main class="login-shell">
+  <section class="login-card">
+    <p class="eyebrow">Seguridad de la información</p>
+    <h1>{{ modo() === 'login' ? 'Acceso al sistema' : 'Crear cuenta' }}</h1>
+    <p class="subtitle">Taller de cifrado clásico · autenticación con BCrypt</p>
+
+    <!-- method="post": aunque falle JavaScript, las credenciales nunca viajan en la URL -->
+    <form
+      method="post"
+      [attr.action]="modo() === 'login' ? '/api/auth/login' : '/api/auth/registro'"
+      (submit)="enviar($event)"
+    >
+      <div class="field">
+        <label for="username">Usuario / Email</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          maxlength="50"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          [value]="username()"
+          (input)="onUsernameInput($event)"
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          maxlength="72"
+          [attr.minlength]="modo() === 'registro' ? 8 : null"
+          [attr.autocomplete]="modo() === 'login' ? 'current-password' : 'new-password'"
+          [value]="password()"
+          (input)="onPasswordInput($event)"
+        />
+        @if (modo() === 'registro') {
+          <small class="hint">Mínimo 8 caracteres, con letras y números.</small>
+        }
+      </div>
+
+      @if (error()) {
+        <p class="alert alert--error" role="alert">{{ error() }}</p>
+      }
+      @if (exito()) {
+        <p class="alert alert--ok" role="status">{{ exito() }}</p>
+      }
+
+      <button type="submit" class="primary" [disabled]="cargando() || segundosBloqueo() > 0">
+        @if (segundosBloqueo() > 0) {
+          IP bloqueada · {{ segundosBloqueo() }} s
+        } @else if (cargando()) {
+          Verificando…
+        } @else {
+          {{ modo() === 'login' ? 'Iniciar sesión' : 'Registrarse' }}
+        }
+      </button>
+    </form>
+
+    <p class="switch">
+      @if (modo() === 'login') {
+        ¿No tiene cuenta?
+        <button type="button" class="link" (click)="cambiarModo('registro')">Regístrese</button>
+      } @else {
+        ¿Ya tiene cuenta?
+        <button type="button" class="link" (click)="cambiarModo('login')">Inicie sesión</button>
+      }
+    </p>
+
+    <p class="note">Las credenciales se verifican únicamente en el servidor.</p>
+  </section>
+</main>

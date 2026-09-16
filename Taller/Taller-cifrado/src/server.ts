@@ -4,25 +4,44 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
-import express from 'express';
+import cookieParser from 'cookie-parser';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import { join } from 'node:path';
+import { protegerPaginas } from './backend/middlewares/sesion';
+import { adminRutas } from './backend/rutas/admin.rutas';
+import { authRutas } from './backend/rutas/auth.rutas';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
+app.disable('x-powered-by');
+app.use(cookieParser());
+
 /**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
+ * API de autenticación: toda la validación de credenciales, el hashing con BCrypt
+ * y el control de intentos fallidos ocurre aquí, en el servidor.
  */
+app.use(
+  '/api',
+  express.json({ limit: '10kb' }),
+  express.urlencoded({ extended: false, limit: '10kb' }),
+);
+app.use('/api/auth', authRutas);
+app.use('/api/admin', adminRutas);
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'Recurso no encontrado.' });
+});
+app.use('/api', (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  const status = (error as { status?: number }).status;
+  if (status && status >= 400 && status < 500) {
+    res.status(status).json({ error: 'Solicitud inválida.' });
+    return;
+  }
+  console.error(error);
+  res.status(500).json({ error: 'Error interno del servidor.' });
+});
 
 /**
  * Serve static files from /browser
@@ -34,6 +53,11 @@ app.use(
     redirect: false,
   }),
 );
+
+/**
+ * Sin sesión válida no se renderiza la página del taller: redirige a /login.
+ */
+app.use(protegerPaginas);
 
 /**
  * Handle all other requests by rendering the Angular application.

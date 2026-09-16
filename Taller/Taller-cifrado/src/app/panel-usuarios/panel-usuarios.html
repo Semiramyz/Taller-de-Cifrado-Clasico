@@ -1,0 +1,50 @@
+<div class="toolbar">
+  <p>
+    Cada hash BCrypt embebe su propio salt aleatorio: dos usuarios con la misma contraseña tienen
+    hashes distintos.
+  </p>
+  <button type="button" (click)="cargar()" [disabled]="cargando()">
+    {{ cargando() ? 'Cargando…' : 'Actualizar' }}
+  </button>
+</div>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Usuario</th>
+        <th>Rol</th>
+        <th>Hash BCrypt (algoritmo · costo · salt)</th>
+        <th>Intentos fallidos</th>
+        <th>Bloqueado hasta</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (usuario of usuarios(); track usuario.id) {
+        <tr [class.locked]="estaBloqueado(usuario)">
+          <td>{{ usuario.id }}</td>
+          <td>{{ usuario.username }}</td>
+          <td>{{ usuario.rol }}</td>
+          <td><code>{{ usuario.hashVisible }}</code></td>
+          <td>{{ usuario.intentosFallidos }}</td>
+          <td>{{ estaBloqueado(usuario) ? formatearFecha(usuario.bloqueadoHasta) : '—' }}</td>
+          <td>
+            @if (estaBloqueado(usuario) || usuario.intentosFallidos > 0) {
+              <button type="button" (click)="desbloquear(usuario.id)">Desbloquear</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7">Sin usuarios registrados.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

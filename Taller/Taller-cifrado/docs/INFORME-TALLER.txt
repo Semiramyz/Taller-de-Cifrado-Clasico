@@ -1,0 +1,253 @@
+INFORME DE LABORATORIO: SEGURIDAD EN AUTENTICACIÓN WEB
+Módulo de inicio de sesión seguro aplicado al Taller de Cifrado Clásico
+
+Programa de Ingeniería de Sistemas - Seguridad de la Información - Período 2026-II
+Autor: Juan Sebastián Pineda Santafé
+
+
+1. INTRODUCCIÓN Y OBJETIVO
+
+El presente informe documenta el diseño e implementación de un sistema de autenticación seguro
+incorporado a la aplicación web desarrollada previamente para el Taller de Cifrado Clásico. El
+objetivo general consistió en proteger el acceso a dicha aplicación mediante el almacenamiento
+de contraseñas con funciones de hash de un solo sentido con salt automático (BCrypt) y en el
+desarrollo de un mecanismo de defensa perimetral en el servidor capaz de mitigar ataques de
+fuerza bruta.
+
+La aplicación original permitía cifrar, descifrar y analizar criptogramas con los métodos de
+César, Afín y Vigenère, y era completamente pública. Con el módulo desarrollado, el acceso a
+esas herramientas quedó restringido a usuarios autenticados, se incorporó un control de acceso
+basado en roles y se añadió un panel de administración que permite auditar el estado de las
+cuentas. El resultado es una aplicación que conserva su propósito académico original pero que
+ahora ejerce un control de acceso verificable.
+
+
+2. NOTA ARQUITECTÓNICA: POR QUÉ LA VALIDACIÓN VIVE EN EL SERVIDOR
+
+La premisa que ordena todo el diseño es que la lógica de autenticación, la verificación de
+credenciales, el hashing de contraseñas y el conteo de intentos fallidos se procesan
+exclusivamente en el lado del servidor. Ninguna de estas decisiones se delega al navegador.
+
+La aplicación está construida con Angular 22 en modo de renderizado del lado del servidor (SSR)
+sobre un servidor Node.js con Express 5, ejecutándose en Node 24. Esta arquitectura resulta
+conveniente para el propósito del taller porque el mismo proceso que entrega las páginas al
+navegador es el que expone la API de autenticación, de modo que la protección se aplica antes de
+que exista cualquier interfaz visible. Cuando un visitante solicita la página principal sin una
+sesión válida, un middleware del servidor responde con una redirección hacia el formulario de
+inicio de sesión, y esa decisión se toma antes de generar el HTML. El código Angular que se
+ejecuta en el navegador incorpora también una verificación de sesión, pero su única finalidad es
+mejorar la experiencia de navegación: no constituye un control de seguridad y su ausencia no
+debilitaría el sistema.
+
+El motor de base de datos utilizado es MySQL 8.4, sobre el puerto 3306, con la base de datos
+taller_cifrado. El servidor se comunica con ella mediante consultas parametrizadas, lo que
+elimina la posibilidad de inyección SQL a través de los campos del formulario.
+
+
+3. DISEÑO DE LA BASE DE DATOS
+
+La estructura relacional se compone de dos tablas. La tabla roles almacena los perfiles de
+autorización disponibles y contiene un identificador autoincremental y un nombre único; se
+inicializa con los valores Administrador y Usuario. La tabla usuarios almacena las credenciales
+y el estado de cada cuenta: un identificador autoincremental, un nombre de usuario único de
+hasta cincuenta caracteres, el hash de la contraseña en una columna de doscientos cincuenta y
+cinco caracteres, una clave foránea hacia la tabla roles, un contador entero de intentos
+fallidos con valor inicial cero y un campo de fecha y hora, que admite nulos, para registrar
+hasta qué momento la cuenta permanece bloqueada.
+
+Conviene destacar una ausencia deliberada en el esquema: no existe una columna destinada a
+guardar el salt. Esto no es una omisión sino una consecuencia del algoritmo elegido, pues BCrypt
+incorpora el salt y el factor de costo dentro de la propia cadena resultante, como se explica en
+el apartado siguiente. El script completo de creación, junto con la inserción de los roles y de
+dos usuarios iniciales, se encuentra en el archivo database/schema.mysql.sql y se ejecutó sin
+errores sobre MySQL 8.4.9.
+
+
+4. FORMULARIO DE INICIO DE SESIÓN
+
+El formulario captura las credenciales y las envía al servidor mediante el método POST, de
+manera que el usuario y la contraseña nunca viajan en la barra de direcciones ni quedan
+registrados en el historial del navegador o en los registros de un servidor intermedio. Los
+campos declaran los atributos autocomplete con los valores username y current-password durante
+el inicio de sesión, y new-password durante el registro, lo cual permite que los gestores de
+contraseñas del navegador colaboren correctamente en lugar de rellenar campos equivocados. Se
+desactivaron además la corrección ortográfica y la capitalización automática sobre el campo de
+usuario, funciones que alteran lo escrito y pueden filtrar texto a servicios externos.
+
+La interfaz informa al usuario del número de intentos que le restan antes del bloqueo y, una vez
+alcanzado el límite, deshabilita el botón de envío mostrando una cuenta regresiva. Debe
+subrayarse que esa cuenta regresiva es un elemento informativo: el bloqueo real ya fue aplicado
+por el servidor y continuaría vigente aunque el usuario manipulara el botón desde las
+herramientas de desarrollo.
+
+
+5. HASHING DE CONTRASEÑAS CON BCRYPT
+
+Las contraseñas nunca se almacenan en texto claro ni se cifran de forma reversible. Al registrar
+un usuario, el servidor genera la cadena mediante BCrypt con un factor de costo de diez, lo que
+equivale a mil veinticuatro rondas de iteración. Ese valor fue elegido por ser el recomendado en
+la guía y por ofrecer un equilibrio razonable entre seguridad y tiempo de respuesta; al ser un
+parámetro configurable, puede incrementarse en el futuro conforme mejore el hardware disponible
+para un atacante, sin necesidad de modificar el código.
+
+La cadena resultante sigue la estructura que combina el identificador del algoritmo, el factor
+de costo, un salt de veintidós caracteres y el hash de treinta y un caracteres. Durante la
+verificación, la librería lee la cadena almacenada, extrae de ella el salt y el costo, procesa
+la contraseña ingresada con esos mismos parámetros y compara ambos resultados. Por esta razón no
+se requiere consultar ni conservar el salt por separado.
+
+El efecto práctico del salt se comprobó empíricamente. Se registraron dos usuarios distintos
+utilizando exactamente la misma contraseña y se consultaron sus hashes en la base de datos. Los
+prefijos obtenidos, que corresponden al algoritmo, al costo y al salt, fueron
+$2b$10$k43yYaeTOr64ew2.sl9kb. para el primero y $2b$10$MvL6wfIxzFE8vBgZ.hXHDO para el segundo.
+Al ser distintos los salts, los hashes completos también difieren por completo, de modo que un
+atacante que obtuviera la base de datos no podría deducir que ambas cuentas comparten contraseña,
+ni podría emplear tablas arcoíris o diccionarios precomputados, pues tendría que repetir el
+trabajo de fuerza bruta para cada cuenta de forma independiente.
+
+Se adoptaron dos precauciones adicionales. La primera consiste en que, cuando se intenta
+ingresar con un nombre de usuario inexistente, el servidor ejecuta de todos modos una comparación
+contra un hash ficticio, con el fin de que el tiempo de respuesta sea equivalente al de una
+cuenta real y no revele qué nombres están registrados. La segunda consiste en que los mensajes
+de error son genéricos e indican únicamente que el usuario o la contraseña son incorrectos, sin
+precisar cuál de los dos falló.
+
+
+6. PROTECCIÓN CONTRA ATAQUES DE FUERZA BRUTA
+
+La defensa se implementó en dos capas complementarias que actúan sobre dimensiones distintas del
+problema.
+
+La primera capa es un middleware que se ejecuta antes del controlador de la ruta de inicio de
+sesión y que lleva un registro en memoria de los intentos fallidos por dirección IP. Cada
+entrada guarda el número de fallos consecutivos, el instante del primer intento de la ventana y
+la marca temporal hasta la cual la dirección permanece bloqueada. La ventana de observación es
+de quince minutos y el límite es de cinco intentos fallidos; superado ese umbral, la dirección
+queda bloqueada durante quince minutos y el servidor responde con el código de estado HTTP 429,
+acompañado de la cabecera Retry-After. El aspecto decisivo de esta capa es su ubicación: al
+ejecutarse antes del controlador, la petición bloqueada no llega siquiera a consultar la base de
+datos ni a calcular un hash, con lo cual el mecanismo protege también contra el agotamiento de
+recursos del servidor.
+
+La segunda capa opera sobre la cuenta y no sobre el origen de la petición, y es la que utiliza
+las columnas intentos_fallidos y bloqueado_hasta de la tabla usuarios. Cada credencial inválida
+incrementa el contador de la cuenta afectada y, al alcanzar los cinco fallos, se registra una
+fecha de desbloqueo quince minutos posterior. Un inicio de sesión exitoso reinicia el contador.
+Esta capa resulta indispensable porque un atacante que distribuya su ataque entre múltiples
+direcciones IP, mediante una red de equipos comprometidos o servicios de proxy, eludiría el
+límite por IP; el bloqueo por cuenta, en cambio, sigue al objetivo del ataque y no a su origen.
+
+El sistema se complementa con una gestión de sesiones del lado del servidor. Tras una
+autenticación exitosa se genera un identificador aleatorio de treinta y dos bytes que se
+almacena en el servidor y se entrega al navegador en una cookie marcada como HttpOnly, con
+política SameSite estricta y con la posibilidad de exigir HTTPS mediante configuración. Al ser
+HttpOnly, la cookie no es accesible desde JavaScript, de manera que una vulnerabilidad de tipo
+Cross-Site Scripting no permitiría robar la sesión. El identificador se regenera en cada inicio
+de sesión para evitar ataques de fijación de sesión.
+
+
+7. PRUEBAS REALIZADAS Y EVIDENCIAS
+
+Las pruebas se ejecutaron sobre la aplicación conectada a MySQL, tanto desde la interfaz web
+como desde la línea de comandos, y se documentan a continuación.
+
+La primera prueba consistió en un ataque automatizado contra el endpoint de inicio de sesión
+mediante un script que envía intentos consecutivos con contraseñas incorrectas. Los cuatro
+primeros intentos recibieron el código 401, con un mensaje que indicaba el número de
+oportunidades restantes; a partir del quinto, el servidor respondió con el código 429 y una
+cabecera Retry-After. La salida obtenida fue la siguiente:
+
+    Intento  1 | HTTP 401 | Usuario o contraseña incorrectos. Intentos restantes: 4.
+    Intento  2 | HTTP 401 | Usuario o contraseña incorrectos. Intentos restantes: 3.
+    Intento  3 | HTTP 401 | Usuario o contraseña incorrectos. Intentos restantes: 2.
+    Intento  4 | HTTP 401 | Usuario o contraseña incorrectos. Intentos restantes: 1.
+    Intento  5 | HTTP 429 | Retry-After: 60s | Demasiados intentos fallidos. Su IP ha sido
+                            bloqueada temporalmente.
+    Intento  6 | HTTP 429 | Retry-After: 60s | Demasiados intentos fallidos. Su IP ha sido
+                            bloqueada temporalmente.
+
+La segunda prueba, y la más concluyente, consistió en repetir el intento número siete utilizando
+la contraseña correcta. El servidor respondió igualmente con el código 429, lo que demuestra que
+el middleware interrumpe la petición antes de llegar a verificar credenciales: una vez bloqueada
+la dirección, la validez de la contraseña es irrelevante.
+
+La tercera prueba verificó la persistencia del bloqueo en la base de datos. La consulta sobre la
+tabla usuarios, ejecutada después del ataque, mostró el contador en cinco y la fecha de
+desbloqueo registrada para la cuenta atacada, mientras que las demás cuentas permanecieron
+intactas:
+
+    id  username                intentos_fallidos  bloqueado_hasta
+    1   admin                   0                  NULL
+    2   usuario                 0                  NULL
+    3   pablito@sagitario.com   5                  2026-09-15 18:05:00
+
+La cuarta prueba comprobó la protección de las páginas. Una solicitud de la página principal sin
+cookie de sesión recibió una redirección con código 302 hacia el formulario de inicio de sesión,
+emitida por el servidor antes de generar contenido alguno. La quinta prueba verificó el control
+de acceso basado en roles: un usuario con rol Usuario que solicita el listado administrativo
+recibe el código 403, y una petición sin sesión recibe el código 401.
+
+Se sugiere acompañar este informe con las siguientes evidencias gráficas. La Figura 1 debe
+mostrar la salida del ataque automatizado en la terminal, tal como se transcribió arriba. La
+Figura 2 debe mostrar la pestaña Network de las herramientas de desarrollo del navegador con la
+petición de inicio de sesión devolviendo el código 429 y la cabecera Retry-After, junto al
+formulario con el botón deshabilitado y su cuenta regresiva. La Figura 3 debe mostrar la consulta
+SQL sobre la tabla usuarios con el contador de intentos fallidos y la fecha de bloqueo. La Figura
+4 debe mostrar el panel de administración de la aplicación con los hashes de dos cuentas creadas
+con la misma contraseña y salts distintos. La Figura 5 debe mostrar la redirección hacia el
+formulario de inicio de sesión al solicitar la página protegida sin sesión activa.
+
+
+8. LIMITACIONES RECONOCIDAS
+
+El registro de intentos por dirección IP y el almacén de sesiones residen en la memoria del
+proceso, por lo que se pierden al reiniciar el servidor y no se comparten entre varias
+instancias. En un despliegue en producción con balanceo de carga, ambos deberían trasladarse a
+un almacén compartido como Redis. Asimismo, si la aplicación se ubicara detrás de un proxy
+inverso, sería necesario configurar la confianza en las cabeceras correspondientes para que la
+dirección IP observada sea la del cliente real y no la del proxy. Finalmente, el entorno de
+pruebas opera sobre HTTP en el equipo local; en producción se exigiría HTTPS y la cookie de
+sesión se marcaría como Secure, opción ya prevista en la configuración.
+
+Cabe anotar que el bloqueo por dirección IP, si bien es eficaz, puede afectar a usuarios
+legítimos que compartan una misma salida a internet, como ocurre en una red institucional. El
+bloqueo temporal, en lugar de permanente, mitiga ese inconveniente.
+
+
+9. CONCLUSIONES
+
+La experiencia permite sostener con evidencia que las validaciones de seguridad no pueden
+realizarse en el navegador. El argumento central lo proporciona la propia prueba: el ataque se
+ejecutó desde un script en la terminal, sin abrir el navegador en ningún momento. Ninguna de las
+validaciones escritas en HTML o en JavaScript llegó a ejecutarse, y sin embargo el ataque quedó
+contenido, porque el control reside en el middleware del servidor. Si la defensa hubiera estado
+programada en el cliente, ese mismo script habría recorrido el espacio de contraseñas sin
+oposición alguna.
+
+El código que se envía al navegador está, por definición, bajo el control de quien lo recibe.
+Cualquier persona puede inspeccionarlo, modificar el HTML para eliminar restricciones como los
+atributos required o maxlength, detener la ejecución en un punto de interrupción, reescribir
+funciones o, sencillamente, prescindir del navegador y dirigirse al endpoint con herramientas
+como curl. Un contador de intentos implementado en JavaScript o almacenado en el navegador se
+reinicia recargando la página, abriendo una ventana de navegación privada o borrando el
+almacenamiento local, de modo que no constituye ninguna barrera.
+
+Tampoco resulta útil trasladar el hashing al cliente. Si el navegador calculara el hash y lo
+enviara al servidor, esa cadena se convertiría en la credencial efectiva, pues bastaría
+reenviarla para autenticarse; quien obtuviera la base de datos podría usar los hashes tal cual,
+sin necesidad de descifrar nada. El hashing debe ocurrir en el servidor, sobre la contraseña
+recibida a través de un canal cifrado.
+
+Lo anterior no significa que las validaciones del lado del cliente carezcan de valor. Cumplen una
+función legítima de usabilidad, al ofrecer respuesta inmediata al usuario y reducir peticiones
+innecesarias, pero deben entenderse como una conveniencia y no como un control. Toda regla
+aplicada en el navegador tiene que repetirse, sin excepción, en el servidor.
+
+Finalmente, el trabajo ilustra el principio de defensa en profundidad. Ningún mecanismo por sí
+solo resuelve el problema: BCrypt protege las contraseñas en el escenario de una filtración de la
+base de datos pero no impide que alguien pruebe combinaciones; el bloqueo por IP frena a un
+atacante individual pero no a uno distribuido; el bloqueo por cuenta cubre ese vacío pero podría
+usarse para negar el servicio a un usuario legítimo, razón por la cual es temporal; y la cookie
+HttpOnly protege la sesión ya establecida frente a la ejecución de scripts maliciosos. Es la
+combinación de estas medidas, y no ninguna de ellas de forma aislada, lo que constituye un
+sistema de autenticación razonablemente seguro.

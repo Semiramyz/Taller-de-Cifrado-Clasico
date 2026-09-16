@@ -29,9 +29,10 @@
               "src/styles.css"
             ],
             "server": "src/main.server.ts",
+            "externalDependencies": ["bcrypt", "mysql2"],
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": ["localhost", "127.0.0.1"]
             },
             "ssr": {
               "entry": "src/server.ts"

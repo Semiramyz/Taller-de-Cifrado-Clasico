@@ -1,0 +1,141 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)),
+    url('../../../miom-_0326-13glJ5yVm1M-unsplash.jpg') center center / cover no-repeat fixed;
+  color: #2f2a39;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.login-card {
+  width: min(100%, 420px);
+  background: linear-gradient(135deg, rgba(255, 250, 244, 0.95), rgba(248, 240, 255, 0.92));
+  border: 1px solid rgba(201, 170, 185, 0.45);
+  border-top: 3px solid rgba(191, 152, 181, 0.9);
+  border-radius: 22px;
+  padding: 2rem 1.75rem;
+  box-shadow: 0 16px 30px rgba(80, 60, 70, 0.25);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #a56c8a;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+
+.subtitle {
+  margin: 0 0 1.5rem;
+  color: #594d5d;
+}
+
+form {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(190, 151, 170, 0.5);
+  border-radius: 12px;
+  background: rgba(255, 252, 249, 0.95);
+  color: #2f2a39;
+  font: inherit;
+}
+
+input:focus {
+  outline: none;
+  border-color: rgba(171, 125, 160, 0.9);
+  box-shadow: 0 0 0 3px rgba(199, 138, 199, 0.2);
+}
+
+.hint {
+  color: #6b7280;
+}
+
+.alert {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.alert--error {
+  background: #fdecef;
+  border: 1px solid #f2b8c4;
+  color: #8a1f3a;
+}
+
+.alert--ok {
+  background: #e9f7ef;
+  border: 1px solid #b5e0c5;
+  color: #1f6b3e;
+}
+
+button.primary {
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c78ac7, #b6a8e6);
+  color: #faf7ff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.switch {
+  margin: 1.25rem 0 0;
+  color: #594d5d;
+  text-align: center;
+}
+
+button.link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #8d4f86;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.note {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: #8d6278;
+  text-align: center;
+}

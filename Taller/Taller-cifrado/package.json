@@ -7,7 +7,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:Taller-cifrado": "node dist/Taller-cifrado/server/server.mjs"
+    "serve:ssr:Taller-cifrado": "node dist/Taller-cifrado/server/server.mjs",
+    "demo:fuerza-bruta": "node scripts/demo-fuerza-bruta.mjs",
+    "hash": "node scripts/generar-hash.mjs"
   },
   "private": true,
   "packageManager": "npm@12.0.2",
@@ -20,7 +22,10 @@
     "@angular/platform-server": "^22.1.0",
     "@angular/router": "^22.1.0",
     "@angular/ssr": "^22.1.6",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
+    "mysql2": "^3.24.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -28,8 +33,10 @@
     "@angular/build": "^22.1.6",
     "@angular/cli": "^22.1.6",
     "@angular/compiler-cli": "^22.1.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.1",
-    "@types/node": "^20.17.19",
+    "@types/node": "^24.13.5",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

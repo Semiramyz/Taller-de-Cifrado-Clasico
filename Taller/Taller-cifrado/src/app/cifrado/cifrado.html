@@ -1,5 +1,11 @@
 ﻿<main class="app-shell">
   <header class="page-header panel hero-panel">
+    @if (auth.usuario(); as usuario) {
+      <div class="session-bar">
+        <span>Sesión: <strong>{{ usuario.username }}</strong> · {{ usuario.rol }}</span>
+        <button type="button" class="ghost" (click)="cerrarSesion()">Cerrar sesión</button>
+      </div>
+    }
     <div class="header-copy">
       <p class="eyebrow">Laboratorio criptográfico</p>
       <h1>Taller de cifrado clásico</h1>
@@ -246,6 +252,19 @@
       }
     }
   </section>
+
+  @if (auth.usuario()?.rol === 'Administrador') {
+    <section class="panel cipher-card">
+      <div class="section-header">
+        <div>
+          <p class="card-label">Control de acceso (RBAC)</p>
+          <h2>Usuarios registrados</h2>
+        </div>
+        <span class="badge">Solo administrador</span>
+      </div>
+      <app-panel-usuarios />
+    </section>
+  }
 
   <section class="panel cipher-card final-media-card">
     <div class="section-header">
