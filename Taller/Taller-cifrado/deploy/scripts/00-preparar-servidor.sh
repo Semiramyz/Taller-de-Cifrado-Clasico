@@ -93,8 +93,16 @@ chown -R "$USUARIO:$USUARIO" "$DESTINO"
 
 echo "==> 4. Servicio systemd"
 cp deploy/systemd/taller-cifrado.service /etc/systemd/system/
+# Volver a la etapa 1: se retira el suplemento que enciende HTTPS, por si este
+# guion se reejecuta despues de haber pasado por el certificado autofirmado.
+rm -f /etc/systemd/system/taller-cifrado.service.d/https.conf
+rmdir /etc/systemd/system/taller-cifrado.service.d 2>/dev/null || true
 systemctl daemon-reload
-systemctl enable --now taller-cifrado
+systemctl enable taller-cifrado
+# restart y no "enable --now": este ultimo arranca el servicio solo si estaba
+# parado, de modo que al redesplegar dejaria vivo el proceso anterior con el
+# dist/ y la unidad antiguos. El sitio pareceria actualizado y no lo estaria.
+systemctl restart taller-cifrado
 sleep 3
 systemctl --no-pager --lines=10 status taller-cifrado || true
 if ! ss -lntH 'sport = :4000' | grep -q 4000; then

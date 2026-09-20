@@ -443,6 +443,8 @@ desplazándote, la sección *Certification Paths* con la cadena completa hasta I
 | `duplicate default server` al recargar nginx | Quedó activo el sitio `default` de Ubuntu | `sudo rm -f /etc/nginx/sites-enabled/default` |
 | La compilación muere sin mensaje | Falta memoria | `free -h`; el guion crea swap, verifica que se activó |
 | `502 Bad Gateway` | La aplicación no arrancó | `journalctl -u taller-cifrado -n 50` |
+| Tras redesplegar, el sitio sigue comportándose como antes | El servicio no se reinició y sigue vivo el proceso anterior | `sudo systemctl restart taller-cifrado`; comprueba la hora en `systemctl status` |
+| En la etapa 1 el sitio redirige a https | Quedó activo el suplemento `taller-cifrado.service.d/https.conf` | `sudo rm -f /etc/systemd/system/taller-cifrado.service.d/https.conf && sudo systemctl daemon-reload && sudo systemctl restart taller-cifrado` |
 | `400 Bad Request` en el dominio | Falta el dominio en `security.allowedHosts` | Ya está corregido en `angular.json`; recompila si editaste algo |
 | El login falla con error del servidor | Falta la carpeta `database/` en `/opt/taller-cifrado` | `sudo cp -r database /opt/taller-cifrado/ && sudo systemctl restart taller-cifrado` |
 | Certbot: *"DNS problem"* o *"Invalid response... 404"* | El registro A no apunta a `3.134.58.85` | Fase 2.1 |
