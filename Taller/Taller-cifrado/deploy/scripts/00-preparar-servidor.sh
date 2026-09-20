@@ -156,8 +156,12 @@ Comprobacion rapida:
 Evidencia 1 del informe:
   - Abrir http://${DOMINIO} en Firefox y capturar el candado tachado y el aviso
     "Esta conexion no es segura" del formulario de inicio de sesion.
-  - Opcional, mucho mas contundente: capturar el POST /api/auth/login con
-      sudo tcpdump -i any -A -s0 'tcp port 80 and host ${DOMINIO}'
+  - Opcional, mucho mas contundente: capturar el POST /api/auth/login.
+    NO filtre por "host ${DOMINIO}": en AWS los paquetes llegan dirigidos a la
+    IP privada de la instancia, no a la elastica, y la captura saldria vacia.
+      sudo tcpdump -i any -s0 -w /tmp/captura.pcap 'tcp port 80'
+      # inicie sesion en el navegador, luego Ctrl+C, y lea la captura:
+      sudo tcpdump -r /tmp/captura.pcap -A | grep -A25 'POST /api/auth/login'
     Se vera el usuario y la contrasena en texto plano.
 
 Siguiente paso: sudo bash deploy/scripts/01-certificado-autofirmado.sh

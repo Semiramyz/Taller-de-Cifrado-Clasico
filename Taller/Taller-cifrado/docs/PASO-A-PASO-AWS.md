@@ -207,17 +207,41 @@ salga el aviso *"Esta conexión no es segura"* y que se vea en la captura.
 
 ### CAPTURA 02 — `02-sin-ssl-captura-red.png`
 
-La más contundente del informe. Necesitas las dos terminales.
-
-**Terminal A**, en el servidor, deja corriendo:
+La más contundente del informe. Antes de empezar, confirma que el sitio responde en claro:
 
 ```bash
-sudo tcpdump -i any -A -s0 'tcp port 80 and host santafe-pineda.shop' | grep -A5 "POST /api"
+curl -I http://santafe-pineda.shop/login     # debe ser 200, no 301
 ```
 
-Ahora, en Firefox, inicia sesión con `admin` / `Admin2026*`. Vuelve a la terminal A: verás el
-`POST /api/auth/login` con el JSON y **la contraseña en texto plano**. Captura esa terminal.
-Corta con `Ctrl+C`.
+Graba la captura en un archivo y léela después. Es más fiable que encadenar `tcpdump` con
+`grep` en vivo, y además te deja un `.pcap` que puedes volver a abrir si la captura de pantalla
+sale mal.
+
+**Terminal A**, en el servidor:
+
+```bash
+sudo tcpdump -i any -s0 -w /tmp/captura.pcap 'tcp port 80'
+```
+
+Ahora, en Firefox, abre `http://santafe-pineda.shop/login` **en una ventana privada** e inicia
+sesión con `admin` / `Admin2026*`. Vuelve a la terminal A y corta con `Ctrl+C`. Después:
+
+```bash
+sudo tcpdump -r /tmp/captura.pcap -A | grep -A25 'POST /api/auth/login'
+```
+
+Verás la petición completa y **la contraseña en texto plano** dentro del JSON. Captura esa
+salida.
+
+Tres detalles que hacen que esto funcione, y que son la causa habitual de una captura vacía:
+
+- **No filtres por `host santafe-pineda.shop`.** Ese nombre resuelve a la IP elástica, pero AWS
+  hace NAT: los paquetes que llegan a la interfaz de la instancia van dirigidos a la IP privada
+  `172.31.22.193`. El filtro por nombre no coincide con nada y la captura sale vacía.
+- **Ventana privada.** Firefox guarda las redirecciones 301 de forma permanente. Si antes viste
+  el sitio redirigiendo a https, puede saltar ahí sin tocar la red.
+- Si prefieres verlo en vivo en lugar de grabar a archivo, añade `-l` a tcpdump para que no
+  acumule la salida antes de pasarla por `grep`.
 
 > Usa sólo la contraseña de prueba del taller. Cualquier cosa que escribas aquí viaja sin cifrar.
 
