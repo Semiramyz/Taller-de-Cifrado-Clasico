@@ -1,37 +1,58 @@
 # Evidencias del informe
 
-Capturas que hay que tomar en el servidor y adjuntar al informe `pineda-juan-ssl.docx`.
-Los nombres sugeridos son los que cita el informe en cada apartado.
+Capturas tomadas durante la ejecución de la práctica sobre la instancia EC2
+`santafe-pineda.shop`. Están embebidas en `docs/pineda-juan-ssl.docx`, que se
+genera a partir de esta carpeta.
 
-## Etapa 1 — sitio sin certificado
+## Etapa 0 — Entorno
 
-| Archivo | Qué debe verse |
+| Archivo | Qué muestra |
 | --- | --- |
-| `01-sin-ssl-firefox.png` | `http://santafe-pineda.shop/login` con el candado tachado y el aviso "Esta conexión no es segura" |
-| `02-sin-ssl-captura-red.png` | `sudo tcpdump -i any -A -s0 'tcp port 80'` durante un inicio de sesión: usuario y contraseña legibles |
-| `03-sin-ssl-ssllabs.png` | SSL Labs sobre el dominio: "Assessment failed: No secure protocols supported" |
+| `00-ssh-instancia.png` | Acceso por SSH: Ubuntu 24.04 LTS sobre AWS |
 
-## Etapa 2 — certificado autofirmado
+## Etapa 1 — Sitio sin certificado
 
-| Archivo | Qué debe verse |
+| Archivo | Qué muestra |
 | --- | --- |
-| `04-openssl-generacion.png` | Salida de `01-certificado-autofirmado.sh`: los tres pasos de OpenSSL |
-| `05-autofirmado-advertencia.png` | Firefox con "Advertencia: riesgo probable de seguridad" y el código `SEC_ERROR_UNKNOWN_ISSUER` |
-| `06-autofirmado-detalle.png` | Visor de certificados: "Emitido para" y "Emitido por" con el mismo nombre |
-| `07-autofirmado-ssllabs.png` | SSL Labs: calificación **T** (trust failure) |
-| `08-autofirmado-sclient.png` | `openssl s_client` con `verify error:num=18:self-signed certificate` |
+| `01-etapa1-http-200.png` | `curl -I` devolviendo 200 OK sin redirección |
+| `02-sin-ssl-navegador.jpg` | Navegador con "Not secure" sobre el formulario de login |
+| `03-sin-ssl-aplicacion.jpg` | La aplicación completa servida en claro |
+| `04-sin-ssl-tcpdump.png` | El POST de login con la contraseña legible |
+| `05-sin-ssl-ssllabs.jpg` | SSL Labs: "Unable to connect to the server" |
+
+## Etapa 2 — Certificado autofirmado
+
+| Archivo | Qué muestra |
+| --- | --- |
+| `06-autofirmado-generacion.png` | Salida del guion: los cuatro archivos creados |
+| `07-autofirmado-emisor-titular.png` | Titular y emisor idénticos |
+| `08-autofirmado-navegador.jpg` | HTTPS tachado en la barra de direcciones |
+| `09-autofirmado-visor.jpg` | Visor de certificados: "Issued To" = "Issued By" |
+| `10-autofirmado-ssllabs-T.png` | SSL Labs: **T**, con "If trust issues are ignored: A" |
+| `11-autofirmado-sclient.png` | `verify error:num=18:self-signed certificate` |
 
 ## Etapa 3 — Let's Encrypt manual
 
-| Archivo | Qué debe verse |
+| Archivo | Qué muestra |
 | --- | --- |
-| `09-certbot-pausa.png` | **La captura más importante.** Certbot detenido pidiendo crear el archivo del reto |
-| `10-token-creado.png` | Segunda sesión SSH: `crear-reto-acme.sh` y el `curl` que devuelve el token |
-| `11-certbot-exito.png` | "Successfully received certificate" y las rutas de `/etc/letsencrypt/live/` |
-| `12-archivos-letsencrypt.png` | `ls -l /etc/letsencrypt/live/santafe-pineda.shop/` y el archivo de `renewal/` |
-| `13-nginx-editado.png` | El `sites-available/santafe-pineda.shop` con las directivas `ssl_certificate` escritas a mano |
-| `14-renovacion-desactivada.png` | `systemctl list-timers --all` sin ningún temporizador de certbot |
-| `15-firefox-candado.png` | Candado cerrado y "Verificado por: Let's Encrypt" |
-| `16-redireccion-301.png` | `curl -I http://santafe-pineda.shop/` devolviendo 301 hacia https |
-| `17-ssllabs-A.png` | SSL Labs con calificación **A** o **A+** |
-| `verificacion.txt` | Salida completa de `bash deploy/scripts/04-verificar-tls.sh` |
+| `12-certbot-manual-dos-retos.png` | `authenticator = manual`, y los dos retos depositados a mano |
+| `13-letsencrypt-archivos.png` | `live/` con sus enlaces simbólicos y el archivo de renovación |
+| `14-nginx-editado-a-mano.png` | Las directivas del certificado, el 301 y HSTS, sin marcas de certbot |
+
+## Verificación
+
+| Archivo | Qué muestra |
+| --- | --- |
+| `15-verificacion-cadena.png` | Cadena hasta ISRG Root X1 y `Verify return code: 0 (ok)` |
+| `16-verificacion-protocolos.png` | TLS 1.0 y 1.1 rechazados; 1.2 y 1.3 aceptados |
+| `17-letsencrypt-visor.jpg` | Visor de certificados: "Issued By: YE1, Let's Encrypt" |
+
+## Pendientes
+
+Estas tres siguen como recuadro amarillo en el informe:
+
+| Archivo | Cómo obtenerla |
+| --- | --- |
+| `14-renovacion-desactivada.png` | `systemctl list-timers --all \| grep -i certbot` (salida vacía) |
+| `16-redireccion-301.png` | `curl -I http://santafe-pineda.shop/login` → 301 + `Location: https://…` |
+| `17-ssllabs-A.png` | Repetir SSL Labs con el certificado de Let's Encrypt: debe dar **A** |
