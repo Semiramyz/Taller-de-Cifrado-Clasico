@@ -1,0 +1,42 @@
+# /etc/systemd/system/taller-cifrado.service
+#
+# Aplicacion Angular SSR del Taller de Cifrado Clasico. Escucha solo en el
+# loopback: la unica puerta de entrada desde internet es nginx, que hace de
+# proxy inverso y es quien termina el TLS.
+#
+#   sudo cp taller-cifrado.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now taller-cifrado
+
+[Unit]
+Description=Taller de Cifrado Clasico (Angular SSR + Express)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=taller
+Group=taller
+WorkingDirectory=/opt/taller-cifrado
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=4000
+# La aplicacion esta detras de un proxy TLS: la cookie de sesion se marca
+# Secure y se confia en la cabecera X-Forwarded-Proto que envia nginx.
+Environment=COOKIE_SECURE=true
+Environment=CONFIAR_EN_PROXY=1
+Environment=FORZAR_HTTPS=true
+EnvironmentFile=-/opt/taller-cifrado/.env
+ExecStart=/usr/bin/node dist/Taller-cifrado/server/server.mjs
+Restart=on-failure
+RestartSec=5
+
+# Endurecimiento basico del servicio
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/taller-cifrado/data
+
+[Install]
+WantedBy=multi-user.target

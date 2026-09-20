@@ -30,6 +30,18 @@ export const config = {
     ventanaMs: numero('VENTANA_MINUTOS', 15) * MINUTO,
     bloqueoMs: numero('BLOQUEO_MINUTOS', 15) * MINUTO,
   },
+  https: {
+    /**
+     * Numero de proxies inversos delante de la aplicacion. Con nginx es 1.
+     * Solo entonces Express hace caso a X-Forwarded-Proto y req.secure dice
+     * la verdad; con 0 la cabecera se ignora, que es lo correcto cuando la
+     * aplicacion se expone directamente y cualquiera podria falsificarla.
+     */
+    proxiesDeConfianza: numero('CONFIAR_EN_PROXY', 0),
+    /** Redirigir a https el trafico que llegue en claro. */
+    forzar: process.env['FORZAR_HTTPS'] === 'true',
+    dominio: process.env['DOMINIO'] || 'santafe-pineda.shop',
+  },
   sesion: {
     nombreCookie: 'sid',
     duracionMs: numero('SESION_HORAS', 2) * 60 * MINUTO,

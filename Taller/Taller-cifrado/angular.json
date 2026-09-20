@@ -32,7 +32,12 @@
             "externalDependencies": ["bcrypt", "mysql2"],
             "outputMode": "server",
             "security": {
-              "allowedHosts": ["localhost", "127.0.0.1"]
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1",
+                "santafe-pineda.shop",
+                "www.santafe-pineda.shop"
+              ]
             },
             "ssr": {
               "entry": "src/server.ts"
