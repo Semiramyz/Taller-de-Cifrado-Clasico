@@ -48,6 +48,25 @@ if [[ "$IP_SERVIDOR" != "$IP_DNS" ]]; then
 fi
 ss -lntp | grep -E ':80|:443' || true
 
+echo "==> 1b. La etapa 2 debe estar completa"
+# Si falta cualquiera de estas piezas, "nginx -t" fallaria al final de este
+# guion, DESPUES de haber gastado una emision de Let's Encrypt. Se comprueba
+# antes de tocar nada.
+FALTA=0
+for ARCHIVO in /etc/ssl/private/dhparam.pem                /etc/nginx/snippets/tls-parametros.conf                /etc/nginx/snippets/proxy-node.conf; do
+    if [[ ! -f "$ARCHIVO" ]]; then
+        echo "    FALTA: ${ARCHIVO}"
+        FALTA=1
+    fi
+done
+if [[ $FALTA -eq 1 ]]; then
+    echo
+    echo "Ejecute antes:  sudo bash deploy/scripts/01-certificado-autofirmado.sh"
+    echo "Ese guion genera los parametros Diffie-Hellman y deja la etapa 2 lista."
+    exit 1
+fi
+echo "    Etapa 2 completa."
+
 echo "==> 2. Instalacion de certbot SIN el plugin de nginx"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update

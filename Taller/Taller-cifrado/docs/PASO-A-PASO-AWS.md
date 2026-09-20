@@ -119,6 +119,10 @@ Revisa las líneas marcadas `[ AVISO ]`. Sólo estas cuatro cosas bloquean el de
 | El sitio `default` de nginx activo | `sudo rm -f /etc/nginx/sites-enabled/default` (el guion `00` ya lo hace) |
 | Menos de 4 GB libres | Libera espacio o amplía el volumen EBS |
 
+Si el despliegue anterior dejó otra copia del repositorio —por ejemplo en `/var/www/`—, no la
+uses: no tiene la carpeta `deploy/`. Trabaja siempre desde `~/Taller-de-Cifrado-Clasico`, y por
+eso todas las órdenes de esta guía empiezan por `cd ~/…` en lugar de una ruta relativa.
+
 **El conflicto de nombre de dominio es el más traicionero de todos.** Si un sitio anterior
 declara `server_name santafe-pineda.shop`, nginx no falla al arrancar: se limita a avisar
 `conflicting server name` en el log y sirve el que haya cargado primero, que por orden
@@ -161,7 +165,7 @@ error te dejaría sin margen.
 ```bash
 sudo apt-get update && sudo apt-get install -y git
 git clone https://github.com/Semiramyz/Taller-de-Cifrado-Clasico.git
-cd "Taller-de-Cifrado-Clasico/Taller/Taller-cifrado"
+cd ~/Taller-de-Cifrado-Clasico/Taller/Taller-cifrado
 ls deploy      # debe existir; si no, falta hacer git push desde el portátil
 ```
 
@@ -311,7 +315,7 @@ PowerShell y conéctate igual que en la fase 1.
 ### 6.1. Lanzar la emisión (Terminal A)
 
 ```bash
-cd "Taller-de-Cifrado-Clasico/Taller/Taller-cifrado"
+cd ~/Taller-de-Cifrado-Clasico/Taller/Taller-cifrado
 sudo bash deploy/scripts/02-letsencrypt-manual.sh
 ```
 
@@ -343,7 +347,7 @@ Copia del mensaje el **nombre del archivo** (lo último de la URL) y el **conten
 larga con el punto en medio) y ejecuta:
 
 ```bash
-cd "Taller-de-Cifrado-Clasico/Taller/Taller-cifrado"
+cd ~/Taller-de-Cifrado-Clasico/Taller/Taller-cifrado
 sudo bash deploy/scripts/crear-reto-acme.sh NOMBRE_ARCHIVO CONTENIDO
 ```
 
