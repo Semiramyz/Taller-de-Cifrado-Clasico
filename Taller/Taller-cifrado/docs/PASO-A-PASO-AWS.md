@@ -341,7 +341,15 @@ Press Enter to Continue
 **Captura esta pantalla completa.** Es la prueba de que la emisión no fue automática.
 **No pulses Enter todavía.**
 
-### 6.2. Crear el reto a mano (Terminal B)
+### 6.2. Crear los retos a mano (Terminal B)
+
+**Son dos, no uno.** El certificado cubre `santafe-pineda.shop` y `www.santafe-pineda.shop`, y
+Let's Encrypt valida cada nombre por separado: certbot se detiene dos veces y pide dos archivos
+distintos. Los dos deben existir a la vez — el propio certbot lo avisa con *"do not remove,
+replace, or undo the previous challenge tasks yet"*.
+
+El ciclo, para cada uno de los dos:
+
 
 Copia del mensaje el **nombre del archivo** (lo último de la URL) y el **contenido** (la línea
 larga con el punto en medio) y ejecuta:
@@ -359,6 +367,9 @@ curl.exe http://santafe-pineda.shop/.well-known/acme-challenge/NOMBRE_ARCHIVO
 ```
 
 Debe devolver exactamente el contenido, sin nada más.
+
+Cuando pulses Enter tras el primer reto, certbot mostrará el segundo. Repite exactamente lo
+mismo con el nombre y el contenido nuevos, sin borrar el archivo anterior.
 
 ### CAPTURA 10 — `10-token-creado.png`
 
@@ -481,6 +492,8 @@ desplazándote, la sección *Certification Paths* con la cadena completa hasta I
 | `400 Bad Request` en el dominio | Falta el dominio en `security.allowedHosts` | Ya está corregido en `angular.json`; recompila si editaste algo |
 | El login falla con error del servidor | Falta la carpeta `database/` en `/opt/taller-cifrado` | `sudo cp -r database /opt/taller-cifrado/ && sudo systemctl restart taller-cifrado` |
 | Certbot: *"DNS problem"* o *"Invalid response... 404"* | El registro A no apunta a `3.134.58.85` | Fase 2.1 |
+| Certbot: `unauthorized` con `404` en el reto | Sigue activa la configuración de la etapa 1, que no sirve `/.well-known/acme-challenge/` | `grep -c acme-challenge /etc/nginx/sites-available/santafe-pineda.shop`; si da 0, ejecuta `01-certificado-autofirmado.sh` |
+| Certbot falla solo en `www.` | Se creó un único archivo de reto, pero son dos | Crea los dos y no borres el primero |
 | Certbot: *"too many failed authorizations"* | 5 intentos fallidos en una hora | Espera una hora; comprueba el `curl` antes de pulsar Enter |
 | El `curl` del reto devuelve 403 o 404 | Permisos de `/var/www/acme` | `sudo chown -R www-data:www-data /var/www/acme` |
 | SSL Labs: *"Chain issues: incomplete"* | Se declaró `cert.pem` en lugar de `fullchain.pem` | Revisa `/etc/nginx/sites-available/santafe-pineda.shop` |

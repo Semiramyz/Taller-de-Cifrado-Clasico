@@ -89,30 +89,74 @@ echo "==> 4. Carpeta del reto ACME"
 install -d -m 755 /var/www/acme/.well-known/acme-challenge
 chown -R www-data:www-data /var/www/acme
 
+echo "==> 4b. Ensayo del camino del reto, antes de gastar un intento"
+# Let's Encrypt solo admite 5 validaciones fallidas por hora y dominio, asi que
+# conviene comprobar con un archivo de mentira que nginx sirve esa ruta. El
+# fallo tipico es tener activa todavia la configuracion de la etapa 1, que no
+# lleva el bloque /.well-known/acme-challenge/: la peticion se reenvia a la
+# aplicacion Node y esta responde 404, que es justo lo que ve Let's Encrypt.
+PRUEBA="ensayo-$(date +%s)"
+echo -n "$PRUEBA" > "/var/www/acme/.well-known/acme-challenge/${PRUEBA}"
+chown -R www-data:www-data /var/www/acme
+FALLO_RETO=0
+for D in "${DOMINIO}" "www.${DOMINIO}"; do
+    # --resolve apunta la peticion al propio nginx: comprueba el bloque server y
+    # la location sin depender de que la instancia pueda alcanzar su propia IP
+    # publica, cosa que en AWS no siempre funciona.
+    RESP=$(curl -fsS --resolve "${D}:80:127.0.0.1"            "http://${D}/.well-known/acme-challenge/${PRUEBA}" 2>/dev/null || echo "SIN-RESPUESTA")
+    if [[ "$RESP" == "$PRUEBA" ]]; then
+        echo "    ${D}: la ruta del reto responde correctamente."
+    else
+        echo "    ${D}: ERROR, nginx devolvio '''${RESP}''' en lugar del contenido."
+        FALLO_RETO=1
+    fi
+done
+rm -f "/var/www/acme/.well-known/acme-challenge/${PRUEBA}"
+if [[ $FALLO_RETO -eq 1 ]]; then
+    cat <<AYUDA
+
+    nginx no esta sirviendo /.well-known/acme-challenge/.
+
+    Casi siempre significa que sigue activa la configuracion de la etapa 1, que
+    no incluye ese bloque. Compruebe cual esta puesta:
+
+        grep -c acme-challenge /etc/nginx/sites-available/${DOMINIO}
+
+    Si responde 0, aplique la de la etapa 2 y vuelva a intentarlo:
+
+        sudo bash deploy/scripts/01-certificado-autofirmado.sh
+
+AYUDA
+    exit 1
+fi
+
 cat <<'AVISO'
 
 --------------------------------------------------------------------------
- ATENCION: certbot va a DETENERSE y a mostrar un texto parecido a este:
+ ATENCION: el certificado cubre DOS nombres, asi que certbot se detendra DOS
+ veces y pedira DOS archivos distintos. Los dos deben existir a la vez: no
+ borre el primero al crear el segundo.
+
+ Cada vez mostrara algo asi:
 
      Create a file containing just this data:
 
-     abcdef...token....xyz.MnO-largoHashDeLaCuenta
+     <CONTENIDO-LARGO-CON-UN-PUNTO-EN-MEDIO>
 
      And make it available on your web server at this URL:
 
-     http://santafe-pineda.shop/.well-known/acme-challenge/abcdef...token....xyz
+     http://.../.well-known/acme-challenge/<NOMBRE-ARCHIVO>
 
- NO pulse Enter todavia. Abra una SEGUNDA sesion SSH y cree ese archivo con
- el script auxiliar (copie el nombre y el contenido del mensaje de certbot):
+ NO pulse Enter todavia. En una SEGUNDA sesion SSH, cree el archivo:
 
-     sudo bash deploy/scripts/crear-reto-acme.sh <NOMBRE_ARCHIVO> <CONTENIDO>
+     cd /home/ubuntu/Taller-de-Cifrado-Clasico/Taller/Taller-cifrado
+     sudo bash deploy/scripts/crear-reto-acme.sh <NOMBRE-ARCHIVO> <CONTENIDO>
 
- Compruebe desde su portatil que el token se lee:
+ El guion auxiliar comprueba solo que el archivo se lee. Solo entonces vuelva
+ aqui y pulse Enter, y repita lo mismo con el segundo reto.
 
-     curl http://santafe-pineda.shop/.well-known/acme-challenge/<NOMBRE_ARCHIVO>
-
- Solo entonces vuelva a esta sesion y pulse Enter.
- Capture las dos pantallas: son la evidencia de que la emision fue manual.
+ Capture la pantalla detenida y la de la segunda sesion: son la evidencia de
+ que la emision fue manual.
 --------------------------------------------------------------------------
 
 AVISO
