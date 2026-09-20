@@ -37,6 +37,7 @@ enlazado desde `sites-enabled/`.
 
 ```bash
 # En el servidor, con el repositorio clonado y el DNS ya apuntando a su IP pública
+sudo bash deploy/scripts/diagnostico-servidor.sh     # que hay ya instalado (no modifica nada)
 sudo bash deploy/scripts/00-preparar-servidor.sh        # etapa 1 + captura de evidencia
 sudo bash deploy/scripts/01-certificado-autofirmado.sh  # etapa 2 + captura de evidencia
 sudo bash deploy/scripts/02-letsencrypt-manual.sh       # etapa 3 (se detiene a pedir el token)
@@ -60,8 +61,9 @@ Lo que el ejercicio pide saber: qué se modifica y dónde queda.
 ├── sites-available/santafe-pineda.shop  <- ARCHIVO PRINCIPAL. Cambia en cada etapa.
 ├── sites-enabled/santafe-pineda.shop    <- enlace simbólico al anterior
 ├── sites-enabled/default                <- SE ELIMINA: ocupa el puerto 80 como default_server
-├── conf.d/tls-parametros.conf           <- protocolos, suites, dhparam, caché de sesión
-└── snippets/proxy-node.conf             <- cabeceras del proxy hacia 127.0.0.1:4000
+└── snippets/
+    ├── tls-parametros.conf           <- protocolos, suites, dhparam, caché de sesión
+    └── proxy-node.conf               <- cabeceras del proxy hacia 127.0.0.1:4000
 
 /etc/ssl/                              CERTIFICADO AUTOFIRMADO (etapa 2)
 ├── certs/santafe-pineda.shop.crt

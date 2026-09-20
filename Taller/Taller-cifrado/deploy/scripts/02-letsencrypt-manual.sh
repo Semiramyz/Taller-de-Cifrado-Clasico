@@ -142,7 +142,7 @@ Certificado activo. Archivos implicados:
     /etc/nginx/sites-available/${DOMINIO}            ssl_certificate, ssl_certificate_key,
                                                      ssl_trusted_certificate, HSTS y el
                                                      bloque 301 del puerto 80
-    /etc/nginx/conf.d/tls-parametros.conf            protocolos y suites
+    /etc/nginx/snippets/tls-parametros.conf          protocolos y suites
     (copia de seguridad de la etapa anterior en ${DOMINIO}.autofirmado.bak)
 
 Evidencia 3 del informe:

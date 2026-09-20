@@ -18,7 +18,34 @@ USUARIO="taller"
 cd "$(dirname "$0")/../.."   # raiz del proyecto
 RAIZ="$(pwd)"
 
-echo "==> 0. Memoria de intercambio"
+echo "==> 0. El puerto 4000 debe estar libre"
+# Si otra cosa ya escucha en el 4000 -tipicamente un despliegue anterior bajo
+# pm2- el servicio systemd de mas abajo no podra arrancar. systemd lo reporta
+# como un fallo discreto y nginx sigue reenviando al proceso viejo, de modo que
+# el sitio parece funcionar pero sirve la aplicacion equivocada.
+DUENO_4000=$(ss -lntpH 'sport = :4000' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1)
+if [[ -n "$DUENO_4000" ]] && ! systemctl is-active --quiet taller-cifrado; then
+    echo "    El puerto 4000 lo ocupa el PID ${DUENO_4000}:"
+    ps -o pid,ppid,user,args= -p "$DUENO_4000" | sed 's/^/      /'
+    UNIDAD=$(systemctl status "$DUENO_4000" 2>/dev/null | head -1 | grep -oP '[\w@.-]+\.service' | head -1)
+    [[ -n "$UNIDAD" ]] && echo "    Lo gobierna la unidad: ${UNIDAD}"
+    cat <<AYUDA
+
+    Libere el puerto antes de continuar. Si es un despliegue anterior con pm2:
+
+        pm2 delete all && pm2 save
+        sudo systemctl disable --now pm2-ubuntu
+
+    Si es un servicio de systemd:
+
+        sudo systemctl disable --now ${UNIDAD:-NOMBRE.service}
+
+AYUDA
+    exit 1
+fi
+echo "    Puerto 4000 disponible."
+
+echo "==> 0b. Memoria de intercambio"
 # La instancia t3.micro tiene 1 GB de RAM y la compilacion de Angular se queda
 # sin memoria: el proceso muere sin mensaje claro. El swap lo evita.
 MEM_MB=$(free -m | awk '/^Mem:/ {print $2}')
@@ -68,13 +95,25 @@ echo "==> 4. Servicio systemd"
 cp deploy/systemd/taller-cifrado.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now taller-cifrado
-sleep 2
+sleep 3
 systemctl --no-pager --lines=10 status taller-cifrado || true
+if ! ss -lntH 'sport = :4000' | grep -q 4000; then
+    echo
+    echo "ERROR: el servicio no quedo escuchando en el puerto 4000."
+    echo "Revise la causa con:  journalctl -u taller-cifrado -n 50 --no-pager"
+    exit 1
+fi
+echo "    Servicio activo y escuchando en 127.0.0.1:4000."
 
-echo "==> 5. Fragmentos y parametros de nginx"
+echo "==> 5. Fragmentos de nginx"
 install -d /etc/nginx/snippets
-cp deploy/nginx/snippets/proxy-node.conf /etc/nginx/snippets/
-cp deploy/nginx/tls-parametros.conf      /etc/nginx/conf.d/
+cp deploy/nginx/snippets/proxy-node.conf     /etc/nginx/snippets/
+cp deploy/nginx/snippets/tls-parametros.conf /etc/nginx/snippets/
+# Una version anterior de este material dejaba los parametros TLS en conf.d/,
+# que es contexto http, donde chocan con las directivas que el propio
+# nginx.conf de Ubuntu ya declara:
+#   "ssl_prefer_server_ciphers" directive is duplicate
+rm -f /etc/nginx/conf.d/tls-parametros.conf
 # Carpeta donde se depositara a mano el token del reto ACME (etapa 3).
 install -d -m 755 /var/www/acme/.well-known/acme-challenge
 chown -R www-data:www-data /var/www/acme

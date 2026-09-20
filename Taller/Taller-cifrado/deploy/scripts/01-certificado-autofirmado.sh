@@ -70,7 +70,30 @@ openssl x509 -in "${DIR_CERT}/${DOMINIO}.crt" -noout \
 echo
 echo "Emisor y titular son el mismo: esa es la 'problematica asociada'."
 
-echo "==> 7. Activacion en nginx"
+echo "==> 7. La aplicacion pasa a modo HTTPS"
+# Hasta ahora la aplicacion servia en claro, porque la etapa 1 consistia en
+# demostrar precisamente eso. Ya existe un certificado y el 443 va a responder,
+# asi que se marca la cookie de sesion como Secure y se exige https.
+# Se hace con un archivo suplementario, y no editando la unidad, para que un
+# "git pull" no lo pise y para que quede claro que es un cambio de etapa.
+install -d /etc/systemd/system/taller-cifrado.service.d
+cat > /etc/systemd/system/taller-cifrado.service.d/https.conf <<UNIDAD
+[Service]
+Environment=COOKIE_SECURE=true
+Environment=FORZAR_HTTPS=true
+UNIDAD
+systemctl daemon-reload
+systemctl restart taller-cifrado
+sleep 2
+if systemctl is-active --quiet taller-cifrado; then
+    echo "    Aplicacion reiniciada en modo HTTPS."
+else
+    echo "ERROR: la aplicacion no arranco tras el cambio."
+    journalctl -u taller-cifrado -n 20 --no-pager
+    exit 1
+fi
+
+echo "==> 8. Activacion en nginx"
 cp "${RAIZ}/deploy/nginx/02-autofirmado.conf" "/etc/nginx/sites-available/${DOMINIO}"
 ln -sf "/etc/nginx/sites-available/${DOMINIO}" "/etc/nginx/sites-enabled/${DOMINIO}"
 nginx -t

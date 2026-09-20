@@ -21,11 +21,19 @@ WorkingDirectory=/opt/taller-cifrado
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=4000
-# La aplicacion esta detras de un proxy TLS: la cookie de sesion se marca
-# Secure y se confia en la cabecera X-Forwarded-Proto que envia nginx.
-Environment=COOKIE_SECURE=true
+# Hay un proxy delante: confiar en sus cabeceras es correcto en las tres etapas.
 Environment=CONFIAR_EN_PROXY=1
-Environment=FORZAR_HTTPS=true
+#
+# COOKIE_SECURE y FORZAR_HTTPS arrancan en false A PROPOSITO.
+# La etapa 1 del taller consiste en demostrar el sitio SIN cifrado: con
+# FORZAR_HTTPS=true la aplicacion redirigiria al puerto 443, donde todavia no
+# escucha nadie, y el sitio quedaria inaccesible justo cuando hay que capturar
+# la evidencia del trafico en claro.
+# El script 01-certificado-autofirmado.sh las pone en true, mediante un archivo
+# suplementario en /etc/systemd/system/taller-cifrado.service.d/https.conf,
+# en cuanto existe un certificado y el puerto 443 responde.
+Environment=COOKIE_SECURE=false
+Environment=FORZAR_HTTPS=false
 EnvironmentFile=-/opt/taller-cifrado/.env
 ExecStart=/usr/bin/node dist/Taller-cifrado/server/server.mjs
 Restart=on-failure

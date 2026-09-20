@@ -108,13 +108,19 @@ app.use((req, res, next) => {
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
-  app.listen(port, (error) => {
+  const port = Number(process.env['PORT'] ?? 4000);
+  // Por omision se escucha solo en el bucle local: la unica via de entrada
+  // desde internet debe ser nginx, que es quien termina el TLS. Sin este
+  // segundo argumento Node abre el puerto en todas las interfaces y la
+  // aplicacion queda accesible sin cifrar en el 4000 para quien alcance la
+  // maquina, con el cortafuegos como unica barrera.
+  const host = process.env['HOST'] || '127.0.0.1';
+  app.listen(port, host, (error) => {
     if (error) {
       throw error;
     }
 
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`Node Express server listening on http://${host}:${port}`);
     if (config.https.forzar) {
       console.log(`TLS delegado en nginx; se exige https para ${config.https.dominio}.`);
     }

@@ -99,6 +99,65 @@ valida por ahí.
 
 ## Fase 3 — Subir el proyecto
 
+### 3.0. Si la instancia ya tenía un proyecto desplegado
+
+Que al abrir el dominio no aparezca el login es lo esperado en este punto: todavía no has
+ejecutado el guion que despliega esta aplicación, así que lo que responde es el despliegue
+anterior. **No hace falta borrarlo todo**, pero sí resolver lo que choque. Para verlo:
+
+```bash
+sudo bash deploy/scripts/diagnostico-servidor.sh
+```
+
+Revisa las líneas marcadas `[ AVISO ]`. Sólo estas cuatro cosas bloquean el despliegue:
+
+| Si el diagnóstico dice | Qué hacer |
+| --- | --- |
+| Otro sitio ya reclama `santafe-pineda.shop` | `sudo rm -f /etc/nginx/sites-enabled/NOMBRE` — **el más importante**, ver abajo |
+| `apache2` instalado y activo | `sudo systemctl disable --now apache2` (ocupa los puertos 80 y 443) |
+| Puerto 4000 ocupado | Ver abajo: casi siempre es un despliegue anterior bajo **pm2** |
+| El sitio `default` de nginx activo | `sudo rm -f /etc/nginx/sites-enabled/default` (el guion `00` ya lo hace) |
+| Menos de 4 GB libres | Libera espacio o amplía el volumen EBS |
+
+**El conflicto de nombre de dominio es el más traicionero de todos.** Si un sitio anterior
+declara `server_name santafe-pineda.shop`, nginx no falla al arrancar: se limita a avisar
+`conflicting server name` en el log y sirve el que haya cargado primero, que por orden
+alfabético puede ser el viejo. Ejecutarías el guion, todo parecería correcto y el navegador
+seguiría mostrando el proyecto anterior. Desactívalo antes de continuar.
+
+Borrar el enlace de `sites-enabled/` no destruye nada: el archivo real sigue en
+`sites-available/` y puedes volver a enlazarlo cuando quieras.
+
+#### El caso habitual: un despliegue anterior con pm2
+
+Si ya habías publicado esta misma aplicación con pm2, el puerto 4000 está ocupado por ese
+proceso. El guion `00` no puede arrancar entonces su servicio de systemd, y como nginx sigue
+reenviando al 4000, el navegador te muestra la versión antigua: parece que todo funciona, pero
+es la aplicación equivocada. Un `404` en `/login` es la señal típica.
+
+```bash
+pm2 list                                      # confirma qué gestiona
+pm2 delete all && pm2 save                    # detiene la aplicación antigua
+sudo systemctl disable --now pm2-ubuntu       # y evita que resucite al reiniciar
+ss -lntp | grep :4000                         # debe quedar sin salida
+```
+
+Conviene pasar de pm2 a systemd, y no al revés, porque la unidad
+[`deploy/systemd/taller-cifrado.service`](../deploy/systemd/taller-cifrado.service) es la que
+define `COOKIE_SECURE=true`, `CONFIAR_EN_PROXY=1` y `FORZAR_HTTPS=true`. Sin esas tres variables
+la cookie de sesión no se marca `Secure` y la aplicación no se entera de que hay un proxy TLS
+delante, que es justo lo que esta práctica tiene que demostrar.
+
+Si más adelante quieres volver a pm2: `sudo systemctl enable --now pm2-ubuntu` y
+`pm2 resurrect`.
+
+**Lo que no debes borrar:** los certificados de Let's Encrypt de otros dominios que ya estén en
+`/etc/letsencrypt/`. Let's Encrypt limita a 5 certificados por dominio y semana, y rehacerlos por
+error te dejaría sin margen.
+
+### 3.1. Clonar el repositorio
+
+
 ```bash
 sudo apt-get update && sudo apt-get install -y git
 git clone https://github.com/Semiramyz/Taller-de-Cifrado-Clasico.git
