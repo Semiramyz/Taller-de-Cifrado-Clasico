@@ -18,6 +18,15 @@ Type=simple
 User=taller
 Group=taller
 WorkingDirectory=/opt/taller-cifrado
+#
+# EnvironmentFile va ANTES que las Environment= a proposito. systemd aplica
+# unas y otras en el orden en que aparecen, de modo que lo ultimo gana. Con el
+# archivo declarado aqui, .env sigue sirviendo para la base de datos y el resto
+# de ajustes, pero no puede contradecir a las variables de la etapa TLS que
+# vienen a continuacion. Cuando estaba al final ocurria justo lo contrario: un
+# FORZAR_HTTPS=true olvidado en .env mantenia la redireccion a https durante la
+# etapa 1 y hacia imposible capturar la evidencia del trafico en claro.
+EnvironmentFile=-/opt/taller-cifrado/.env
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=4000
@@ -34,7 +43,6 @@ Environment=CONFIAR_EN_PROXY=1
 # en cuanto existe un certificado y el puerto 443 responde.
 Environment=COOKIE_SECURE=false
 Environment=FORZAR_HTTPS=false
-EnvironmentFile=-/opt/taller-cifrado/.env
 ExecStart=/usr/bin/node dist/Taller-cifrado/server/server.mjs
 Restart=on-failure
 RestartSec=5

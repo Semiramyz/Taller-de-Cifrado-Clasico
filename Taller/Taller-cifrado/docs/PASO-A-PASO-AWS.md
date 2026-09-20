@@ -169,8 +169,12 @@ Crea el archivo de configuración:
 
 ```bash
 cp .env.example .env
-sed -i 's/^COOKIE_SECURE=false/COOKIE_SECURE=true/' .env
 ```
+
+No toques `COOKIE_SECURE` ni `FORZAR_HTTPS` en ese archivo. Son variables de etapa y las
+gobierna la unidad de systemd: la etapa 1 necesita servir en claro y las etapas 2 y 3
+necesitan https. Si las fijas en `.env` y el servicio las lee, la aplicación redirigirá a
+un puerto 443 que todavía no existe.
 
 ---
 
@@ -445,6 +449,7 @@ desplazándote, la sección *Certification Paths* con la cadena completa hasta I
 | `502 Bad Gateway` | La aplicación no arrancó | `journalctl -u taller-cifrado -n 50` |
 | Tras redesplegar, el sitio sigue comportándose como antes | El servicio no se reinició y sigue vivo el proceso anterior | `sudo systemctl restart taller-cifrado`; comprueba la hora en `systemctl status` |
 | En la etapa 1 el sitio redirige a https | Quedó activo el suplemento `taller-cifrado.service.d/https.conf` | `sudo rm -f /etc/systemd/system/taller-cifrado.service.d/https.conf && sudo systemctl daemon-reload && sudo systemctl restart taller-cifrado` |
+| Sigue redirigiendo aunque no haya suplemento | `FORZAR_HTTPS=true` en `/opt/taller-cifrado/.env` | `sudo sed -i '/^FORZAR_HTTPS=/d; /^COOKIE_SECURE=/d' /opt/taller-cifrado/.env` y reinicia. Comprueba con `systemctl show taller-cifrado -p Environment` |
 | `400 Bad Request` en el dominio | Falta el dominio en `security.allowedHosts` | Ya está corregido en `angular.json`; recompila si editaste algo |
 | El login falla con error del servidor | Falta la carpeta `database/` en `/opt/taller-cifrado` | `sudo cp -r database /opt/taller-cifrado/ && sudo systemctl restart taller-cifrado` |
 | Certbot: *"DNS problem"* o *"Invalid response... 404"* | El registro A no apunta a `3.134.58.85` | Fase 2.1 |
