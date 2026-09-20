@@ -351,13 +351,19 @@ replace, or undo the previous challenge tasks yet"*.
 El ciclo, para cada uno de los dos:
 
 
-Copia del mensaje el **nombre del archivo** (lo último de la URL) y el **contenido** (la línea
-larga con el punto en medio) y ejecuta:
+Copia del mensaje **la línea larga con el punto en medio** —el contenido— y pégala como único
+argumento. No hace falta el nombre del archivo: es exactamente la parte anterior al punto, y el
+guion la deduce.
 
 ```bash
 cd ~/Taller-de-Cifrado-Clasico/Taller/Taller-cifrado
-sudo bash deploy/scripts/crear-reto-acme.sh NOMBRE_ARCHIVO CONTENIDO
+sudo bash deploy/scripts/crear-reto-acme.sh Gz4tVZgkmYec...AA.P4FM-pvag...QeA
 ```
+
+> Ese valor de ejemplo es sólo eso: pega **el que tienes en pantalla**. Escribir literalmente
+> una palabra como `CONTENIDO` crea un archivo con ese nombre, Let's Encrypt sigue viendo un 404
+> y se consume uno de los cinco intentos por hora. El guion detecta ese caso y se niega a
+> continuar, pero conviene saberlo.
 
 El guion crea el archivo, ajusta permisos y comprueba con `curl` que se lee. Antes de seguir,
 compruébalo también desde fuera, en tu portátil:

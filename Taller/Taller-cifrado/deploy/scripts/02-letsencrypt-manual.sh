@@ -150,10 +150,12 @@ cat <<'AVISO'
  NO pulse Enter todavia. En una SEGUNDA sesion SSH, cree el archivo:
 
      cd /home/ubuntu/Taller-de-Cifrado-Clasico/Taller/Taller-cifrado
-     sudo bash deploy/scripts/crear-reto-acme.sh <NOMBRE-ARCHIVO> <CONTENIDO>
+     sudo bash deploy/scripts/crear-reto-acme.sh PEGUE_AQUI_LA_LINEA_LARGA
 
- El guion auxiliar comprueba solo que el archivo se lee. Solo entonces vuelva
- aqui y pulse Enter, y repita lo mismo con el segundo reto.
+ OJO: hay que pegar el VALOR que certbot muestra, no el texto de ejemplo. Solo
+ se pasa el contenido; el nombre del archivo es la parte anterior al punto y el
+ guion la deduce. El guion comprueba que el archivo se lee y lo dice.
+ Solo entonces vuelva aqui y pulse Enter, y repita con el segundo reto.
 
  Capture la pantalla detenida y la de la segunda sesion: son la evidencia de
  que la emision fue manual.
